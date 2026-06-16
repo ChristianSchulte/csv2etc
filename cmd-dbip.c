@@ -304,6 +304,7 @@ static int dbip_asn_nftables_read(const struct csv2etc *restrict const ctx,
     scopy(r->comment, csv->val, sizeof(r->comment) - 1, csv->len);
     break;
   default:
+    String_delete(r->asn);
     werr("%zu: %zu: Too many columns: %s\n", csv->row, csv->col, csv->val);
     return -1;
   }
@@ -381,6 +382,7 @@ static int dbip_country_nftables_read(const struct csv2etc *restrict const ctx,
 
     break;
   default:
+    String_delete(r->cc);
     werr("%zu: %zu: Too many columns: %s\n", csv->row, csv->col, csv->val);
     return -1;
   }
