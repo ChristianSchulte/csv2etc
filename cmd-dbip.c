@@ -172,7 +172,8 @@ static int dbip_nftables_open(const struct csv2etc *restrict const ctx,
       cmd_ctx->out_nm = options.optarg;
       break;
     default:
-      fatal("%s", argv[argc]);
+      werr("%s: Illegal option: %c\n", argv[0], ch);
+      break;
     }
   }
 
