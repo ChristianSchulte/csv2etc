@@ -178,6 +178,7 @@ static int csv2etc(int argc, char *argv[]) {
   struct optparse options = {0};
   struct csv2etc ctx = {0};
   const struct cmd *restrict cmd = NULL;
+  void *restrict cmd_ctx = NULL;
   const struct cmd_ops *restrict cmd_ops = NULL;
   FILE *restrict f_csv = stdin;
   char buf[BUFSIZ];
@@ -226,7 +227,7 @@ static int csv2etc(int argc, char *argv[]) {
   } else
     ctx.in_nm = "-";
 
-  void *restrict const cmd_ctx = cmd_ops->open(&ctx, argc, argv);
+  cmd_ctx = cmd_ops->open(&ctx, argc, argv);
   if (cmd_ctx == NULL)
     goto err;
 

@@ -229,6 +229,9 @@ static int dbip_nftables_close(const struct csv2etc *restrict const ctx,
   struct dbip_nftables *restrict const c_ctx = cmd_ctx;
   int r = 0;
 
+  if (cmd_ctx == NULL)
+    return -1;
+
   if (c_ctx->f_ip4 != NULL)
     fprintf(c_ctx->f_ip4, "\t}\n}\n");
 
