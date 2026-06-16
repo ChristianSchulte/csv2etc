@@ -15,8 +15,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef DBIP_H
-#define DBIP_H
+#ifndef CMD_DBIP_H
+#define CMD_DBIP_H
 
 #ifdef HAVE_HOST_H
 #include "host.h"

@@ -19,8 +19,8 @@
 #include "host.h"
 #endif
 
+#include "cmd-dbip.h"
 #include "csv2etc.h"
-#include "dbip.h"
 #include "proc.h"
 #include "string.h"
 

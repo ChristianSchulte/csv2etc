@@ -64,7 +64,7 @@ LDFLAGS=$(DEBUG) $(PROFILE) $(LTO)
 #LDFLAGS+=-fno-omit-frame-pointer
 
 HEADERS=csv2etc.h
-HEADERS+=dbip.h
+HEADERS+=cmd-dbip.h
 HEADERS+=heap.h
 HEADERS+=host.h
 HEADERS+=map.h
