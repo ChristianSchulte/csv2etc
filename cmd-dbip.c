@@ -315,10 +315,10 @@ static int dbip_asn_nftables_read(const struct csv2etc *restrict const ctx,
 static int dbip_asn_nftables_write(const struct csv2etc *restrict const ctx,
                                    void *restrict const cmd_ctx) {
   struct dbip_nftables *restrict const c_ctx = cmd_ctx;
-
+  int r = -1;
   if (c_ctx->r.asn == NULL) {
     werr("%s: %zu: No system number: %s\n", ctx->in_nm, ctx->row, ctx->line);
-    return -1;
+    goto err;
   }
 
   if (Map_get(c_ctx->ids, c_ctx->r.asn) == NULL) {
@@ -336,9 +336,11 @@ static int dbip_asn_nftables_write(const struct csv2etc *restrict const ctx,
             c_ctx->r.ip6_end, String_chars(c_ctx->r.asn));
   } else {
     werr("%s: :%zu: No IP range: %s\n", ctx->in_nm, ctx->row, ctx->line);
-    return -1;
+    goto err;
   }
 
+  r = 0;
+err:
   c_ctx->r.mark = 0;
   *c_ctx->r.comment = '\0';
   *c_ctx->r.ip4_begin = '\0';
@@ -346,7 +348,7 @@ static int dbip_asn_nftables_write(const struct csv2etc *restrict const ctx,
   *c_ctx->r.ip6_begin = '\0';
   *c_ctx->r.ip6_end = '\0';
   String_delete(c_ctx->r.asn);
-  return 0;
+  return r;
 }
 
 static int dbip_country_nftables_read(const struct csv2etc *restrict const ctx,
@@ -393,10 +395,11 @@ static int dbip_country_nftables_read(const struct csv2etc *restrict const ctx,
 static int dbip_country_nftables_write(const struct csv2etc *restrict const ctx,
                                        void *restrict const cmd_ctx) {
   struct dbip_nftables *restrict const c_ctx = cmd_ctx;
+  int r = -1;
 
   if (c_ctx->r.cc == NULL) {
     werr("%s: %zu: No country code: %s\n", ctx->in_nm, ctx->row, ctx->line);
-    return -1;
+    goto err;
   }
 
   if (Map_get(c_ctx->ids, c_ctx->r.cc) == NULL) {
@@ -413,9 +416,11 @@ static int dbip_country_nftables_write(const struct csv2etc *restrict const ctx,
             c_ctx->r.ip6_end, String_chars(c_ctx->r.cc));
   } else {
     werr("%s: :%zu: No IP range: %s\n", ctx->in_nm, ctx->row, ctx->line);
-    return -1;
+    goto err;
   }
 
+  r = 0;
+err:
   c_ctx->r.mark = 0;
   *c_ctx->r.comment = '\0';
   *c_ctx->r.ip4_begin = '\0';
@@ -423,5 +428,5 @@ static int dbip_country_nftables_write(const struct csv2etc *restrict const ctx,
   *c_ctx->r.ip6_begin = '\0';
   *c_ctx->r.ip6_end = '\0';
   String_delete(c_ctx->r.cc);
-  return 0;
+  return r;
 }
