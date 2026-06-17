@@ -18,6 +18,10 @@
 	/etc/nftables/dbip-country-ipv6.nft
 
 	0x02$ cat /etc/nftables.conf
+	#!/usr/sbin/nft -f
+
+	flush ruleset
+
 	table inet filter {
 		set http_blocklist {
 			type ipv4_addr
@@ -29,7 +33,7 @@
 			type ipv4_addr
 			flags dynamic, timeout
 			size 524288
-			# 25 burst / 1/60 rate = 1500 plus 15s headroom
+			# 25 burst / 1 rate = 25 plus 15s headroom
 			timeout 25h15s
 		}
 		set http_limits_soft {
@@ -225,8 +229,80 @@
 				$AS328490,
 				# Techno Asia InfoTech Pvt. ltd
 				$AS135037,
+				# Triple T Broadband Public Company Limited - http://www.3bb.co.th
+				$AS45758,
+				# Bharti Airtel Ltd., Telemedia Services - https://airtel.in
+				$AS24560,
+				# Vietnam P&T - https://vnpt.com.vn
+				$AS135905,
+				# Information and Communication Technology Agency of Srilanka
+				$AS132124,
+				# TECHOFF SRV LIMITED - https://dmzhost.co/
+				$AS48090,
+				# Psychz Networks - https://www.psychz.net
+				$AS40676,
+				# China Telecom Jiangsu Province IDC Network
+				$AS23650,
+				# CS LOXINFO Public Company Limited. - https://www.csloxinfo.com/idc-solutions
+				$AS9891,
+				# IONOS SE - http://www.ionos.com
+				$AS8560,
+				# SK Broadband Co Ltd - https://www.bworld.co.kr
+				$AS9318,
+				# DigitalOcean LLC - https://www.digitalocean.com
+				$AS14061,
+				# TOTAL PLAY TELECOMUNICACIONES SA DE CV- http://www.totalplay.com.mx
+				$AS22884,
+				# FDCservers.net - https://www.fdcservers.net
+				$AS30058,
+				# China Telecom Wuxi IDC Network
+				$AS138950,
+				# China Unicom - http://www.chinaunicom.com
+				$AS138421,
+				# Beijing Baidu Netcom Science and Technology Co., Ltd. - http://www.baidu.com
+				$AS38365,
+				# CHINANET Guangdong province network
+				$AS58466,
+				# CHINANET Nanjing Jishan IDC network
+				$AS134756,
+				# CHINA TELECOM
+				$AS140903,
+				# China Unicom Beijing Province Network
+				$AS4808,
+				# China Unicom Industrial Internet Backbone
+				$AS9929,
+				# GoDaddy.com, LLC - https://godaddy.com
+				$AS398101,
+				# Zong (CMPak Limited) - https://www.zong.com.pk
+				$AS59257,
+				# Kompeatelecom Ltd.
+				$AS25299,
+				# Corporación Telemic C.A.(Inter) - https://inter.com.ve
+				$AS21826,
+				# Tunisia BackBone AS - http://www.tunisietelecom.tn
+				$AS2609,
+				# ENTEL CHILE S.A. - http://www.entel.cl
+				$AS27651,
+				# Bharti Airtel Ltd. - https://www.airtel.in
+				$AS9498,
+				# The Communications Authority of Thailand (CAT) - https://www.ntplc.co.th
+				$AS4651,
+				# OVH SAS - https://ovhcloud.com
+				$AS16276,
 			}
 		}
+		counter accepted_connections {}
+		counter dropped_connections {}
+		counter rejected_asn {}
+		counter dropped_ipv4 {}
+		counter accepted_webclients {}
+		counter dropped_webclients {}
+		counter accepted_smtpclients {}
+		counter dropped_smtpclients {}
+		counter accepted_sshclients {}
+		counter dropped_sshclients {}
+		counter accepted_mailclients {}
+		counter dropped_mailclients {}
 		chain input {
 			type filter hook input priority filter; policy drop;
 			# Accept loopback
@@ -240,74 +316,75 @@
 			#  related: Packets related to an existing connection
 			#  invalid: Packets that are invalid according to connection
 			#           tracking
-			ct state established,related accept
-			ct state invalid counter drop
+			ct state established,related counter name "accepted_connections" accept
+			ct state invalid counter name "dropped_connections" drop
 			# Reject blacklisted ASN
 			ct state new ct mark set ip saddr map @dbip-ipv4-asn
 			ct state new ct mark set ip6 saddr map @dbip-ipv6-asn
-			ct mark @asn_blocklist counter reject
+			ct mark @asn_blocklist counter name "rejected_asn" reject
 			# Drop blacklisted web clients
-			tcp dport { 80, 443 } ip saddr @ip4_blocklist counter drop
+			tcp dport { 80, 443 } ip saddr @ip4_blocklist\
+				counter name "dropped_ipv4" drop
 			# Drop web clients having exceeded rate limiting
 			tcp dport { 80, 443 } ip saddr @http_blocklist update @http_blocklist {\
 				ip saddr timeout 2h\
-			} counter drop
+			} counter name "dropped_webclients" drop
 			# Drop mail transfer agents having exceeded rate limiting
 			tcp dport { 25 } ip saddr @mta_blocklist update @mta_blocklist {\
 				ip saddr timeout 2h\
-			} counter drop
+			} counter name "dropped_smtpclients" drop
 			# Drop ssh clients having exceeded rate limiting
 			tcp dport { 22 } ip saddr @ssh_blocklist update @ssh_blocklist {\
 				ip saddr timeout 2h\
-			} counter drop
+			} counter name "dropped_sshclients" drop
 			# Drop mail user agents having exceeded rate limiting
 			tcp dport { 465, 993 } ip saddr @mua_blocklist update @mua_blocklist {\
 				ip saddr timeout 2h\
-			} counter drop
+			} counter name "dropped_mailclients" drop
 			# Accept web clients in the country blocklist applying hard rate limiting
 			meta mark set ip saddr map @dbip-ipv4-country
 			meta mark set ip6 saddr map @dbip-ipv6-country
 			meta mark @country_blocklist tcp dport { 80, 443 }\
 				ct state new update @http_limits_hard {\
 					ip saddr limit rate 1/hour burst 25 packets\
-				} accept
+				} counter name "accepted_webclients" accept
 			# Accept web clients not in the country blocklist applying soft rate limiting
 			meta mark != @country_blocklist tcp dport { 80, 443 }\
 				ct state new update @http_limits_soft {\
 					ip saddr limit rate 4/minute burst 10 packets\
-				} accept
+				} counter name "accepted_webclients" accept
 			# Drop web clients exceeding rate limiting
 			tcp dport { 80, 443 } ct state new update @http_blocklist {\
 				ip saddr\
-			} counter drop
+			} counter name "dropped_webclients" drop
 			# Accept mail transfer agents applying rate limiting
 			tcp dport { 25 } ct state new update @mta_limits {\
 				ip saddr limit rate 1/minute burst 10 packets\
-			} accept
+			} counter name "accepted_smtpclients" accept
 			# Drop mail transfer agents exceeding rate limiting
 			tcp dport { 25 } ct state new update @mta_blocklist {\
 				ip saddr\
-			} counter drop
+			} counter name "dropped_smtpclients" drop
 			# Drop ssh clients not from germany
 			meta mark != { $DE } tcp dport { 22 } update @ssh_blocklist {\
 				ip saddr timeout 1h\
-			} counter drop
+			} counter name "dropped_sshclients" drop
 			# Accept ssh clients applying rate limiting
 			tcp dport { 22 } ct state new update @ssh_limits {\
 				ip saddr limit rate 1/minute burst 2 packets\
-			} accept
+			} counter name "accepted_sshclients" accept
 			# Drop ssh clients exceeding rate limiting
 			tcp dport { 22 } ct state new update @ssh_blocklist {\
 				ip saddr\
-			} counter drop
+			} counter name "dropped_sshclients" drop
 			# Accept mail user agents applying rate limiting
 			tcp dport { 465, 993 } ct state new update @mua_limits {\
 				ip saddr limit rate 1/minute burst 10 packets\
-			} accept
+			} counter name "accepted_mailclients" accept
 			# Drop mail user agents exceeding rate limiting
 			tcp dport { 465, 993 } ct state new update @mua_blocklist {\
 				ip saddr\
-			} counter drop
+			} counter name "dropped_mailclients" drop
 		}
 		chain forward {
 			type filter hook forward priority filter;
@@ -317,6 +394,7 @@
 		}
 	}
 
+	0x02$ nft list counters
 	0x02$ nft list set inet filter http_blocklist
 	0x02$ nft list set iner filter ssh_blocklist
 	0x02$ nft list set iner filter mta_blocklist
@@ -326,6 +404,6 @@
 	0x02$ nft list set inet filter ssh_limits
 	0x02$ nft list set inet filter mta_limits
 	0x02$ nft list set inet filter mua_limits
-
-	0x02$ whois -h whois.cymru.com -v 103.206.229.166
+	0x02$ whois -h whois.cymru.com -v 2.58.100.1
+	0x02$ lynx https//bgp.tools/as/3320
 
