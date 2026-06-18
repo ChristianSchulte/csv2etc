@@ -22,14 +22,14 @@
 #include "host.h"
 #endif
 
-#ifndef CSVCOLUMN_MAX
-#define CSVCOLUMN_MAX 128
+#ifndef CELLVALUE_MAX
+#define CELLVALUE_MAX 128
 #endif
 
 #include <stdbool.h>
 #include <stddef.h>
 
-struct csv {
+struct cell {
   char *val;
   size_t len;
   size_t row;
@@ -55,7 +55,7 @@ struct cmd_ops {
   void *(*open)(const struct csv2etc *restrict const, int argc, char *argv[]);
   int (*close)(const struct csv2etc *restrict const, void *restrict const);
   int (*read)(const struct csv2etc *restrict const, void *restrict const,
-              const struct csv *restrict const);
+              const struct cell *restrict const);
   int (*write)(const struct csv2etc *restrict const, void *restrict const);
 };
 

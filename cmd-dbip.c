@@ -37,11 +37,11 @@ struct dbip_record {
   struct String *cc;
   struct String *asn;
   uint32_t mark;
-  char comment[CSVCOLUMN_MAX + 1];
-  char ip4_begin[CSVCOLUMN_MAX + 1];
-  char ip4_end[CSVCOLUMN_MAX + 1];
-  char ip6_begin[CSVCOLUMN_MAX + 1];
-  char ip6_end[CSVCOLUMN_MAX + 1];
+  char comment[CELLVALUE_MAX + 1];
+  char ip4_begin[CELLVALUE_MAX + 1];
+  char ip4_end[CELLVALUE_MAX + 1];
+  char ip6_begin[CELLVALUE_MAX + 1];
+  char ip6_end[CELLVALUE_MAX + 1];
 };
 
 struct dbip_nftables {
@@ -61,7 +61,7 @@ static void *dbip_asn_nftables_open(const struct csv2etc *restrict const,
                                     int argc, char *argv[]);
 static int dbip_asn_nftables_read(const struct csv2etc *restrict const,
                                   void *restrict const,
-                                  const struct csv *restrict const);
+                                  const struct cell *restrict const);
 static int dbip_asn_nftables_write(const struct csv2etc *restrict const,
                                    void *restrict const);
 
@@ -69,7 +69,7 @@ static void *dbip_country_nftables_open(const struct csv2etc *restrict const,
                                         int argc, char *argv[]);
 static int dbip_country_nftables_read(const struct csv2etc *restrict const,
                                       void *restrict const,
-                                      const struct csv *restrict const);
+                                      const struct cell *restrict const);
 static int dbip_country_nftables_write(const struct csv2etc *restrict const,
                                        void *restrict const);
 
@@ -285,31 +285,32 @@ dbip_country_nftables_open(const struct csv2etc *restrict const ctx, int argc,
 
 static int dbip_asn_nftables_read(const struct csv2etc *restrict const ctx,
                                   void *restrict const cmd_ctx,
-                                  const struct csv *restrict const csv) {
+                                  const struct cell *restrict const cell) {
   struct dbip_record *restrict const r = &((struct dbip_nftables *)cmd_ctx)->r;
 
-  switch (csv->col) {
+  switch (cell->col) {
   case 0:
-    if (strchr(csv->val, ':') != NULL)
-      scopy(r->ip6_begin, csv->val, sizeof(r->ip6_begin) - 1, csv->len);
+    if (strchr(cell->val, ':') != NULL)
+      scopy(r->ip6_begin, cell->val, sizeof(r->ip6_begin) - 1, cell->len);
     else
-      scopy(r->ip4_begin, csv->val, sizeof(r->ip4_begin) - 1, csv->len);
+      scopy(r->ip4_begin, cell->val, sizeof(r->ip4_begin) - 1, cell->len);
     break;
   case 1:
-    if (strchr(csv->val, ':') != NULL)
-      scopy(r->ip6_end, csv->val, sizeof(r->ip6_end) - 1, csv->len);
+    if (strchr(cell->val, ':') != NULL)
+      scopy(r->ip6_end, cell->val, sizeof(r->ip6_end) - 1, cell->len);
     else
-      scopy(r->ip4_end, csv->val, sizeof(r->ip4_end) - 1, csv->len);
+      scopy(r->ip4_end, cell->val, sizeof(r->ip4_end) - 1, cell->len);
     break;
   case 2:
-    r->asn = String_cnew(csv->val);
+    r->asn = String_cnew(cell->val);
     break;
   case 3:
-    scopy(r->comment, csv->val, sizeof(r->comment) - 1, csv->len);
+    scopy(r->comment, cell->val, sizeof(r->comment) - 1, cell->len);
     break;
   default:
     String_delete(r->asn);
-    werr("%zu: %zu: Too many columns: %s\n", csv->row, csv->col, csv->val);
+    werr("%s: %zu: %zu: Too many columns: %s\n", ctx->in_nm, cell->row,
+         cell->col, cell->val);
     return -1;
   }
 
@@ -357,39 +358,41 @@ err:
 
 static int dbip_country_nftables_read(const struct csv2etc *restrict const ctx,
                                       void *restrict const cmd_ctx,
-                                      const struct csv *restrict const csv) {
+                                      const struct cell *restrict const cell) {
   struct dbip_record *restrict const r = &((struct dbip_nftables *)cmd_ctx)->r;
 
-  switch (csv->col) {
+  switch (cell->col) {
   case 0:
-    if (strchr(csv->val, ':') != NULL)
-      scopy(r->ip6_begin, csv->val, sizeof(r->ip6_begin) - 1, csv->len);
+    if (strchr(cell->val, ':') != NULL)
+      scopy(r->ip6_begin, cell->val, sizeof(r->ip6_begin) - 1, cell->len);
     else
-      scopy(r->ip4_begin, csv->val, sizeof(r->ip4_begin) - 1, csv->len);
+      scopy(r->ip4_begin, cell->val, sizeof(r->ip4_begin) - 1, cell->len);
     break;
   case 1:
-    if (strchr(csv->val, ':') != NULL)
-      scopy(r->ip6_end, csv->val, sizeof(r->ip6_end) - 1, csv->len);
+    if (strchr(cell->val, ':') != NULL)
+      scopy(r->ip6_end, cell->val, sizeof(r->ip6_end) - 1, cell->len);
     else
-      scopy(r->ip4_end, csv->val, sizeof(r->ip4_end) - 1, csv->len);
+      scopy(r->ip4_end, cell->val, sizeof(r->ip4_end) - 1, cell->len);
     break;
   case 2:
-    if (csv->len > 4) {
-      werr("%zu: Country code too long: %s\n", csv->row, csv->val);
+    if (cell->len > 4) {
+      werr("%s: %zu: %zu: Country code too long: %s\n", ctx->in_nm, cell->row,
+           cell->col, cell->val);
       return -1;
     }
 
-    r->cc = String_cnew(csv->val);
+    r->cc = String_cnew(cell->val);
     r->mark = 0;
 
-    const char *restrict v_p = csv->val;
+    const char *restrict v_p = cell->val;
     while (*v_p)
       r->mark = (r->mark << 8) | (*v_p++ & 0xff);
 
     break;
   default:
     String_delete(r->cc);
-    werr("%zu: %zu: Too many columns: %s\n", csv->row, csv->col, csv->val);
+    werr("%s: %zu: %zu: Too many columns: %s\n", ctx->in_nm, cell->row,
+         cell->col, cell->val);
     return -1;
   }
 

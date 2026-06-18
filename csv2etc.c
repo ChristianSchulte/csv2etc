@@ -36,9 +36,10 @@
 const char *restrict progname;
 _Atomic bool terminated;
 
-static size_t csv_scan_quoted(char *restrict out, size_t *out_len,
-                              const struct csv *restrict const csv,
-                              const char *restrict const in) {
+static size_t scan_quoted(char *restrict out, size_t *out_len,
+                          const struct csv2etc *restrict const ctx,
+                          const struct cell *restrict const cell,
+                          const char *restrict const in) {
   const char *in_p = in;
   char *out_p = out;
   bool unmatched = true;
@@ -58,7 +59,8 @@ static size_t csv_scan_quoted(char *restrict out, size_t *out_len,
   }
 
   if (*out_len == SIZE_MAX) {
-    werr("%zu: %zu: Value too long: %s\n", csv->row, csv->col, in);
+    werr("%s: %zu: %zu: Value too long: %s\n", ctx->in_nm, cell->row, cell->col,
+         in);
     return 0;
   }
 
@@ -66,59 +68,60 @@ static size_t csv_scan_quoted(char *restrict out, size_t *out_len,
   *out_len = out_p - out;
 
   if (unmatched) {
-    werr("%zu: %zu: Umatched quotes: %s\n", csv->row, csv->col, in);
+    werr("%zu: %zu: Umatched quotes: %s\n", cell->row, cell->col, in);
     return 0;
   }
 
   return in_p - in;
 }
 
-static int csv_scan_line(const struct csv2etc *restrict const ctx,
-                         void *restrict const cmd_ctx,
-                         const struct cmd_ops *restrict const cmd_ops) {
-  char val[CSVCOLUMN_MAX + 1] = {0};
+static int scan_line(const struct csv2etc *restrict const ctx,
+                     void *restrict const cmd_ctx,
+                     const struct cmd_ops *restrict const cmd_ops) {
+  char val[CELLVALUE_MAX + 1] = {0};
   char *start = ctx->line, *end = NULL;
-  struct csv csv = {0};
-  csv.row = ctx->row;
+  struct cell cell = {0};
+  cell.row = ctx->row;
 
   while (start != NULL) {
     if (*start == '\"') {
       size_t v_len = sizeof(val) - 1;
-      size_t i_len = csv_scan_quoted(val, &v_len, &csv, ++start);
+      size_t i_len = scan_quoted(val, &v_len, ctx, &cell, ++start);
 
       if (i_len == 0 && v_len != 0)
         return -1;
 
-      csv.len = v_len;
-      csv.val = val;
+      cell.val = val;
+      cell.len = v_len;
 
-      if (cmd_ops->read(ctx, cmd_ctx, &csv))
+      if (cmd_ops->read(ctx, cmd_ctx, &cell))
         return -1;
 
-      csv.col++;
+      cell.col++;
       end = start + i_len;
       start = *end ? end + 1 : NULL;
       continue;
     } else
       end = strchr(start, ctx->separator);
 
+    cell.val = start;
+
     if (end != NULL) {
       *end = '\0';
-      csv.len = end - start;
+      cell.len = end - start;
     } else
-      csv.len = strlen(start);
+      cell.len = strlen(start);
 
-    csv.val = start;
-
-    if (csv.len > sizeof(val) - 1) {
-      werr("%zu: %zu: Value too long: %s\n", csv.row, csv.col, start);
+    if (cell.len > sizeof(val) - 1) {
+      werr("%s: %zu: %zu: Value too long: %s\n", ctx->in_nm, cell.row, cell.col,
+           start);
       return -1;
     }
 
-    if (cmd_ops->read(ctx, cmd_ctx, &csv))
+    if (cmd_ops->read(ctx, cmd_ctx, &cell))
       return -1;
 
-    csv.col++;
+    cell.col++;
     start = end != NULL ? end + 1 : NULL;
   }
 
@@ -243,7 +246,7 @@ static int csv2etc(int argc, char *argv[]) {
     ctx.line = buf;
     ctx.row++;
 
-    if (csv_scan_line(&ctx, cmd_ctx, cmd_ops))
+    if (scan_line(&ctx, cmd_ctx, cmd_ops))
       goto err;
 
     if (cmd_ops->write(&ctx, cmd_ctx))
