@@ -38,9 +38,10 @@ struct csv {
 
 struct csv2etc {
   const char *in_nm;
+  char separator;
+  bool quiet;
   size_t row;
   char *line;
-  bool quiet;
 };
 
 struct cmd {

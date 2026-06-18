@@ -100,7 +100,7 @@ static int csv_scan_line(const struct csv2etc *restrict const ctx,
       start = *end ? end + 1 : NULL;
       continue;
     } else
-      end = strchr(start, ',');
+      end = strchr(start, ctx->separator);
 
     if (end != NULL) {
       *end = '\0';
@@ -167,7 +167,7 @@ static void cmd_usage(const struct cmd *restrict cmd) {
 }
 
 static _Noreturn void usage(void) {
-  werr("Usage: %s command [-q] [-i input-file]\n", progname);
+  werr("Usage: %s command [-q] [-i input-file] [-s separator]\n", progname);
   cmd_usage(cmd_dbip);
   exit(EXIT_FAILURE);
 }
@@ -181,6 +181,9 @@ static int csv2etc(int argc, char *argv[]) {
   const struct cmd_ops *restrict cmd_ops = NULL;
   FILE *restrict f_csv = stdin;
   char buf[BUFSIZ];
+
+  ctx.separator = ',';
+
   optparse_init(&options, argv);
   options.permute = false;
 
@@ -192,13 +195,16 @@ static int csv2etc(int argc, char *argv[]) {
   if (cmd == NULL)
     usage();
 
-  while ((ch = optparse(&options, "i:q")) != -1) {
+  while ((ch = optparse(&options, "i:qs:")) != -1) {
     switch (ch) {
     case 'i':
       ctx.in_nm = options.optarg;
       break;
     case 'q':
       ctx.quiet = true;
+      break;
+    case 's':
+      ctx.separator = *options.optarg;
       break;
     default:
       usage();
