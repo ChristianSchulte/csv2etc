@@ -1,5 +1,5 @@
 /* $SchulteIT: string.h 15189 2025-10-27 05:41:45Z schulte $ */
-/* $JDTAUS: string.h 9505 2026-06-11 14:07:36Z schulte $ */
+/* $JDTAUS: string.h 9541 2026-06-18 06:29:51Z schulte $ */
 
 /*
  * Copyright (c) 2018 - 2026 Christian Schulte <cs@schulte.it>
@@ -31,9 +31,6 @@ extern const void *const StringMapOps;
 
 struct String;
 
-void string_init(void);
-void string_destroy(void);
-
 struct String *String_new(const struct String *restrict const, const size_t,
                           const size_t);
 struct String *String_cnew(const char *restrict);
@@ -51,4 +48,9 @@ struct String *String_toupper(const struct String *restrict const, const size_t,
 
 const char *const String_chars(const struct String *restrict const);
 const size_t String_length(const struct String *restrict const);
+
+#ifdef STRING_INTERNING
+void string_init(void);
+void string_destroy(void);
+#endif
 #endif

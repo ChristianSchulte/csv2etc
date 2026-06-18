@@ -51,7 +51,7 @@ WARNINGS+=-Wformat-signedness
 WARNINGS+=-Wformat-truncation
 WARNINGS+=-Wuninitialized
 WARNINGS+=-Wshadow
-#WARNINGS+=-Wcast-qual
+WARNINGS+=-Wcast-qual
 
 CFLAGS=$(INCLUDES) $(DEBUG) $(PROFILE) $(LTO) $(CONFIG) $(WARNINGS)
 CFLAGS+=-pedantic

@@ -267,8 +267,6 @@ err:
 static void terminate(int signum) { terminated = true; }
 
 int main(int argc, char *argv[]) {
-  string_init();
-
   if (signal(SIGTERM, terminate) == SIG_ERR)
     fatal("%s", strerror(errno));
 
@@ -285,9 +283,5 @@ int main(int argc, char *argv[]) {
   } else
     progname = ".";
 
-  int r = csv2etc(argc - 1, argv + 1);
-
-  string_destroy();
-
-  return r;
+  return csv2etc(argc - 1, argv + 1);
 }

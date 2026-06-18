@@ -1,5 +1,5 @@
 /* $SchulteIT: string.c 15189 2025-10-27 05:41:45Z schulte $ */
-/* $JDTAUS: string.c 9516 2026-06-14 22:14:26Z schulte $ */
+/* $JDTAUS: string.c 9542 2026-06-18 06:34:55Z schulte $ */
 
 /*
  * Copyright (c) 2018 - 2026 Christian Schulte <cs@schulte.it>
@@ -51,18 +51,22 @@ const void *const StringMapOps = &(const struct MapOps){
     .k_equals = String_equals,
 };
 
+#ifdef STRING_INTERNING
 struct Map *restrict strings;
 
 void string_init(void) { strings = Map_new(StringMapOps, 524288); }
 void string_destroy(void) { Map_delete(strings, String_delete); }
+#endif
 
 inline struct String *String_cnew(const char *restrict s) {
   size_t hc = 5381;
   const char *s_p;
+  struct String *restrict str;
 
   for (s_p = s; *s_p; s_p++)
     hc = ((hc << 5) + hc) + (unsigned char)*s_p;
 
+#ifdef STRING_INTERNING
   // XXX: (char *)
   struct String k = {
       .s = (char *)s,
@@ -73,33 +77,39 @@ inline struct String *String_cnew(const char *restrict s) {
 #ifdef MULTI_THREADED
   Map_lock(strings);
 #endif
-  struct String *restrict str = Map_get(strings, &k);
-
+  str = Map_get(strings, &k);
   if (str == NULL) {
+#endif
     str = heap_malloc(sizeof(struct String));
-    str->len = k.len;
-    str->hc = k.hc;
+    str->len = s_p - s;
+    str->hc = hc;
     str->r_cnt = 1;
     str->s = heap_calloc(str->len + 1, sizeof(char));
     memcpy(str->s, s, str->len);
 #ifdef MULTI_THREADED
     mutex_init(&str->mtx);
 #endif
+#ifdef STRING_INTERNING
     Map_put(strings, str, str);
   }
 #ifdef MULTI_THREADED
   Map_unlock(strings);
 #endif
   return String_copy(str);
+#else
+  return str;
+#endif
 }
 
 inline struct String *String_cnnew(const char *restrict s, size_t maxlen) {
   size_t hc = 5381;
   const char *s_p;
+  struct String *restrict str;
 
   for (s_p = s; *s_p && maxlen != 0; s_p++, maxlen--)
     hc = ((hc << 5) + hc) + (unsigned char)*s_p;
 
+#ifdef STRING_INTERNING
   // XXX: (char *)
   struct String k = {
       .s = (char *)s,
@@ -110,24 +120,29 @@ inline struct String *String_cnnew(const char *restrict s, size_t maxlen) {
 #ifdef MULTI_THREADED
   Map_lock(strings);
 #endif
-  struct String *restrict str = Map_get(strings, &k);
+  str = Map_get(strings, &k);
 
   if (str == NULL) {
+#endif
     str = heap_malloc(sizeof(struct String));
-    str->len = k.len;
-    str->hc = k.hc;
+    str->len = s_p - s;
+    str->hc = hc;
     str->r_cnt = 1;
     str->s = heap_calloc(str->len + 1, sizeof(char));
     memcpy(str->s, s, str->len);
 #ifdef MULTI_THREADED
     mutex_init(&str->mtx);
 #endif
+#ifdef STRING_INTERNING
     Map_put(strings, str, str);
   }
 #ifdef MULTI_THREADED
   Map_unlock(strings);
 #endif
   return String_copy(str);
+#else
+  return str;
+#endif
 }
 
 inline struct String *String_new(const struct String *restrict s,
