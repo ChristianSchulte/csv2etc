@@ -79,7 +79,7 @@ static int dbip_nftables_close(const struct csv2etc *restrict const,
 static const struct cmd_ops dbip_asn_ops[] = {
     {
         .nm = "nftables",
-        .usage = "[-n name] [-o out-dir]",
+        .usage = "[-n name] [-o output-directory]",
         .open = dbip_asn_nftables_open,
         .close = dbip_nftables_close,
         .read = dbip_asn_nftables_read,
@@ -90,7 +90,7 @@ static const struct cmd_ops dbip_asn_ops[] = {
 static const struct cmd_ops dbip_country_ops[] = {
     {
         .nm = "nftables",
-        .usage = "[-n name] [-o out-dir]",
+        .usage = "[-n name] [-o output-directory]",
         .open = dbip_country_nftables_open,
         .close = dbip_nftables_close,
         .read = dbip_country_nftables_read,

@@ -171,7 +171,8 @@ static void cmd_usage(const struct cmd *restrict cmd) {
 }
 
 static _Noreturn void usage(void) {
-  werr("Usage: %s command [-q] [-i input-file] [-s separator]\n", progname);
+  werr("Usage: %s command [-q] [-i input-file] [-s separator-char]\n",
+       progname);
   cmd_usage(cmd_dbip);
   exit(EXIT_FAILURE);
 }
