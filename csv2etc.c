@@ -70,7 +70,7 @@ static size_t csv_scan_quoted(char *restrict out, size_t *out_len,
     return 0;
   }
 
-  return in_p - in + 2;
+  return in_p - in;
 }
 
 static int csv_scan_line(const struct csv2etc *restrict const ctx,
@@ -89,8 +89,6 @@ static int csv_scan_line(const struct csv2etc *restrict const ctx,
       if (i_len == 0 && v_len != 0)
         return -1;
 
-      end += i_len;
-
       csv.len = v_len;
       csv.val = val;
 
@@ -98,6 +96,7 @@ static int csv_scan_line(const struct csv2etc *restrict const ctx,
         return -1;
 
       csv.col++;
+      end = start + i_len;
       start = *end ? end + 1 : NULL;
       continue;
     } else

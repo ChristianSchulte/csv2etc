@@ -33,72 +33,67 @@
 			type mark
 			flags dynamic, timeout
 			size 524288
-			# 32 burst / 4 rate = 8 plus 15s headroom
-			timeout 8m15s
+			# 36 burst / 4 rate = 9 plus 30s headroom
+			timeout 9m30s
 		}
 		set http_blocklist {
 			type ipv4_addr
 			flags dynamic, timeout
 			size 524288
-			timeout 1h
+			timeout 10m
 		}
 		set http_limits_hard {
 			type ipv4_addr
 			flags dynamic, timeout
 			size 524288
-			# 25 burst / 1 rate = 25 plus 15s headroom
-			timeout 25h15s
+			# 10 burst / 2 rate = 5 plus 30s headroom
+			timeout 5m30s
 		}
 		set http_limits_soft {
 			type ipv4_addr
 			flags dynamic, timeout
 			size 524288
-			# 10 burst / 4 rate = 2.5 plus 15s headroom
-			timeout 165s
+			# 12 burst / 12 rate = 1 plus 30s headroom
+			timeout 1m30s
 		}
 		set mta_blocklist {
 			type ipv4_addr
 			flags dynamic, timeout
 			size 524288
-			timeout 1h
+			timeout 10m
 		}
 		set mta_limits {
 			type ipv4_addr
 			flags dynamic, timeout
 			size 524288
-			# 10 burst / 1 rate = 10 plus 15s headroom
-			timeout 10m15s
+			# 10 burst / 1 rate = 10 plus 30s headroom
+			timeout 10m30s
 		}
 		set ssh_blocklist {
 			type ipv4_addr
 			flags dynamic, timeout
 			size 524288
-			timeout 1h
+			timeout 10m
 		}
 		set ssh_limits {
 			type ipv4_addr
 			flags dynamic, timeout
 			size 524288
-			# 2 burst / 1 rate = 2 plus 15s headroom
-			timeout 2m15s
+			# 2 burst / 1 rate = 2 plus 30s headroom
+			timeout 2m30s
 		}
 		set mua_blocklist {
 			type ipv4_addr
 			flags dynamic, timeout
 			size 524288
-			timeout 1h
+			timeout 10m
 		}
 		set mua_limits {
 			type ipv4_addr
 			flags dynamic, timeout
 			size 524288
-			# 10 burst / 1 rate = 10 plus 15s headroom
-			timeout 10m15s
-		}
-		set ip4_blocklist {
-			type ipv4_addr
-			flags interval
-			auto-merge
+			# 10 burst / 1 rate = 10 plus 30s headroom
+			timeout 10m30s
 		}
 		include "/etc/nftables/dbip-asn-def.nft"
 		include "/etc/nftables/dbip-country-def.nft"
@@ -106,29 +101,23 @@
 		include "/etc/nftables/dbip-asn-ipv6.nft"
 		include "/etc/nftables/dbip-country-ipv4.nft"
 		include "/etc/nftables/dbip-country-ipv6.nft"
-		set country_blocklist {
+		set country_whitelist {
 			type mark
 			elements = {
-				$CN, $RU, $KP, $VN, $IR, $BR, $ID, $TR, $UA, $ZA, $SG,
-				$BD, $HK, $UZ, $HN, $AR, $PY, $NP, $EC, $IQ, $IN, $AL,
-				$PH, $LB, $CG, $PK, $MY, $BW, $RO, $EG, $TH, $TN, $SA,
-				$DZ, $MX, $AO, $CL, $KH, $CO, $KE, $JO, $MA, $VE, $MU,
-				$KG, $TG, $KZ, $BO, $PE, $SN, $LT, $BF, $SV, $NG, $MY,
-				$AE, $AM, $MM, $QA, $MQ
+				$DE
 			}
 		}
 		counter accepted_connections {}
 		counter dropped_connections {}
 		counter rejected_asn {}
-		counter dropped_ipv4 {}
 		counter accepted_webclients {}
-		counter dropped_webclients {}
+		counter rejected_webclients {}
 		counter accepted_smtpclients {}
-		counter dropped_smtpclients {}
+		counter rejected_smtpclients {}
 		counter accepted_sshclients {}
-		counter dropped_sshclients {}
+		counter rejected_sshclients {}
 		counter accepted_mailclients {}
-		counter dropped_mailclients {}
+		counter rejected_mailclients {}
 		chain input {
 			type filter hook input priority filter; policy drop;
 			# Accept loopback
@@ -152,73 +141,74 @@
 			} counter name "rejected_asn" reject
 			# Reject ASN exceeding rate limiting
 			ct state new update @asn_limits {\
-				ct mark limit rate over 4/minute burst 32 packets\
+				ct mark limit rate over 4/minute burst 36 packets\
 			} update @asn_blocklist {\
 				ct mark\
 			} counter name "rejected_asn" reject
-			# Drop blacklisted web clients
-			tcp dport { 80, 443 } ip saddr @ip4_blocklist\
-				counter name "dropped_ipv4" drop
-			# Drop web clients having exceeded rate limiting
+			# Reject web clients having exceeded rate limiting
 			tcp dport { 80, 443 } ip saddr @http_blocklist update @http_blocklist {\
-				ip saddr timeout 2h\
-			} counter name "dropped_webclients" drop
-			# Drop mail transfer agents having exceeded rate limiting
+				ip saddr\
+			} counter name "rejected_webclients" reject
+			# Reject mail transfer agents having exceeded rate limiting
 			tcp dport { 25 } ip saddr @mta_blocklist update @mta_blocklist {\
-				ip saddr timeout 2h\
-			} counter name "dropped_smtpclients" drop
-			# Drop ssh clients having exceeded rate limiting
+				ip saddr\
+			} counter name "rejected_smtpclients" reject
+			# Reject ssh clients having exceeded rate limiting
 			tcp dport { 22 } ip saddr @ssh_blocklist update @ssh_blocklist {\
-				ip saddr timeout 2h\
-			} counter name "dropped_sshclients" drop
-			# Drop mail user agents having exceeded rate limiting
+				ip saddr\
+			} counter name "rejected_sshclients" reject
+			# Reject mail user agents having exceeded rate limiting
 			tcp dport { 465, 993 } ip saddr @mua_blocklist update @mua_blocklist {\
-				ip saddr timeout 2h\
-			} counter name "dropped_mailclients" drop
-			# Accept web clients in the country blocklist applying hard rate limiting
+				ip saddr\
+			} counter name "rejected_mailclients" reject
+			# Accept web clients not in the country whitelist applying hard rate limiting
 			meta mark set ip saddr map @dbip-ipv4-country
 			meta mark set ip6 saddr map @dbip-ipv6-country
-			meta mark @country_blocklist tcp dport { 80, 443 }\
+			meta mark != @country_whitelist tcp dport { 80, 443 }\
 				ct state new update @http_limits_hard {\
-					ip saddr limit rate 1/hour burst 25 packets\
+					ip saddr limit rate 2/minute burst 10 packets\
 				} counter name "accepted_webclients" accept
-			# Accept web clients not in the country blocklist applying soft rate limiting
-			meta mark != @country_blocklist tcp dport { 80, 443 }\
+			# Accept web clients in the country whitelist applying soft rate limiting
+			meta mark @country_whitelist tcp dport { 80, 443 }\
 				ct state new update @http_limits_soft {\
-					ip saddr limit rate 4/minute burst 10 packets\
+					ip saddr limit rate 12/minute burst 12 packets\
 				} counter name "accepted_webclients" accept
-			# Drop web clients exceeding rate limiting
+			# Reject web clients exceeding rate limiting
 			tcp dport { 80, 443 } ct state new update @http_blocklist {\
 				ip saddr\
-			} counter name "dropped_webclients" drop
+			} counter name "rejected_webclients" reject
 			# Accept mail transfer agents applying rate limiting
 			tcp dport { 25 } ct state new update @mta_limits {\
 				ip saddr limit rate 1/minute burst 10 packets\
 			} counter name "accepted_smtpclients" accept
-			# Drop mail transfer agents exceeding rate limiting
+			# Reject mail transfer agents exceeding rate limiting
 			tcp dport { 25 } ct state new update @mta_blocklist {\
 				ip saddr\
-			} counter name "dropped_smtpclients" drop
-			# Drop ssh clients not from germany
-			meta mark != { $DE } tcp dport { 22 } update @ssh_blocklist {\
-				ip saddr timeout 1h\
-			} counter name "dropped_sshclients" drop
+			} counter name "rejected_smtpclients" reject
+			# Reject ssh clients not from germany
+			meta mark != @country_whitelist tcp dport { 22 } update @ssh_blocklist {\
+				ip saddr\
+			} counter name "rejected_sshclients" reject
 			# Accept ssh clients applying rate limiting
 			tcp dport { 22 } ct state new update @ssh_limits {\
 				ip saddr limit rate 1/minute burst 2 packets\
 			} counter name "accepted_sshclients" accept
-			# Drop ssh clients exceeding rate limiting
+			# Reject ssh clients exceeding rate limiting
 			tcp dport { 22 } ct state new update @ssh_blocklist {\
 				ip saddr\
-			} counter name "dropped_sshclients" drop
+			} counter name "rejected_sshclients" reject
+			# Reject mail clients not from germany
+			meta mark != @country_whitelist tcp dport { 465, 993 } update @mua_blocklist {\
+				ip saddr\
+			} counter name "rejected_mailclients" reject
 			# Accept mail user agents applying rate limiting
 			tcp dport { 465, 993 } ct state new update @mua_limits {\
 				ip saddr limit rate 1/minute burst 10 packets\
 			} counter name "accepted_mailclients" accept
-			# Drop mail user agents exceeding rate limiting
+			# Reject mail user agents exceeding rate limiting
 			tcp dport { 465, 993 } ct state new update @mua_blocklist {\
 				ip saddr\
-			} counter name "dropped_mailclients" drop
+			} counter name "rejected_mailclients" reject
 		}
 		chain forward {
 			type filter hook forward priority filter;
