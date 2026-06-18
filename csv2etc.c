@@ -68,7 +68,8 @@ static size_t scan_quoted(char *restrict out, size_t *out_len,
   *out_len = out_p - out;
 
   if (unmatched) {
-    werr("%zu: %zu: Umatched quotes: %s\n", cell->row, cell->col, in);
+    werr("%s: %zu: %zu: Umatched quotes: %s\n", ctx->in_nm, cell->row,
+         cell->col, in);
     return 0;
   }
 
