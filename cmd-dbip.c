@@ -353,6 +353,7 @@ err:
   *c_ctx->r.ip6_begin = '\0';
   *c_ctx->r.ip6_end = '\0';
   String_delete(c_ctx->r.asn);
+  c_ctx->r.asn = NULL;
   return r;
 }
 
@@ -435,5 +436,6 @@ err:
   *c_ctx->r.ip6_begin = '\0';
   *c_ctx->r.ip6_end = '\0';
   String_delete(c_ctx->r.cc);
+  c_ctx->r.cc = NULL;
   return r;
 }
