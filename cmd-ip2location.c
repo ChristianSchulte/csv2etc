@@ -28,12 +28,12 @@
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
-#include <math.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
+#define IPV6_BYTES 16
 #define nitems(a) (sizeof((a)) / sizeof((a)[0]))
 
 enum ip2loc_type { IPV4 = 1, IPV6 };
@@ -183,11 +183,9 @@ inline static int mul10add(uintptr_t *restrict n, const size_t items,
   return c ? -1 : 0;
 }
 
-static int stoipv6(uint8_t *restrict ip, size_t items, const char *restrict s,
-                   size_t len) {
+static int stoipv6(uint8_t *restrict ip, const char *restrict s, size_t len) {
   const char *restrict p = s;
-  uintptr_t n[sizeof(uint8_t) * items / sizeof(uintptr_t)];
-  const size_t n_items = nitems(n);
+  uintptr_t n[IPV6_BYTES / sizeof(uintptr_t)];
 
   memset(n, 0, sizeof(n));
 
@@ -197,11 +195,11 @@ static int stoipv6(uint8_t *restrict ip, size_t items, const char *restrict s,
     if (d > 9)
       return -1;
 
-    if (mul10add(n, n_items, d))
+    if (mul10add(n, nitems(n), d))
       return -1;
   }
 
-  for (size_t i = 0; i < n_items; i++)
+  for (size_t i = 0; i < nitems(n); i++)
     for (size_t b = sizeof(uintptr_t); b-- > 0;)
       *ip++ = (uint8_t)(n[i] >> (b * 8));
 
@@ -298,7 +296,7 @@ static int ip2loc_dbip_read(const struct csv2etc *restrict const ctx,
                             void *restrict const cmd_ctx,
                             const struct cell *restrict const cell) {
   unsigned long ip4;
-  uint8_t ip6[16] = {0};
+  uint8_t ip6[IPV6_BYTES] = {0};
   struct ip2loc_dbip *restrict const c_ctx = cmd_ctx;
 
   switch (cell->col) {
@@ -315,7 +313,7 @@ static int ip2loc_dbip_read(const struct csv2etc *restrict const ctx,
            (ip4 & 0x0000ff00) >> 8, ip4 & 0xff);
       break;
     case IPV6:
-      if (stoipv6(ip6, nitems(ip6), cell->val, cell->len)) {
+      if (stoipv6(ip6, cell->val, cell->len)) {
         werr("%s: %zu: %zu: Not a 128bit IPv6 address: %s\n", ctx->in_nm,
              cell->row, cell->col, cell->val);
         return -1;
@@ -344,7 +342,7 @@ static int ip2loc_dbip_read(const struct csv2etc *restrict const ctx,
            (ip4 & 0x0000ff00) >> 8, ip4 & 0xff);
       break;
     case IPV6:
-      if (stoipv6(ip6, nitems(ip6), cell->val, cell->len)) {
+      if (stoipv6(ip6, cell->val, cell->len)) {
         werr("%s: %zu: %zu: Not a 128bit IPv6 address: %s\n", ctx->in_nm,
              cell->row, cell->col, cell->val);
         return -1;
