@@ -57,6 +57,7 @@ target_sources(
 	csv2etc
 	PRIVATE
 	    ${CMAKE_CURRENT_SOURCE_DIR}/cmd-dbip.c
+	    ${CMAKE_CURRENT_SOURCE_DIR}/cmd-ip2location.c
 	    ${CMAKE_CURRENT_SOURCE_DIR}/csv2etc.c
 	    ${CMAKE_CURRENT_SOURCE_DIR}/heap.c
 	    ${CMAKE_CURRENT_SOURCE_DIR}/map.c
