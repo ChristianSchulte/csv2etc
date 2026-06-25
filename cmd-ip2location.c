@@ -180,7 +180,7 @@ inline static int mul10add(uintptr_t *restrict n, size_t items, uintptr_t c) {
         (x10_msb < x2_msb) + (x10_lsb < x2_lsb) + (n[items] < x10_lsb);
     c = x10_msb + r0;
     if (c < x10_msb)
-      panic();
+      return -1;
   }
 
   return c ? -1 : 0;
