@@ -175,9 +175,12 @@ inline static int mul10add(uintptr_t *restrict n, size_t items, uintptr_t c) {
     const uintptr_t x8_lsb = n[items] << 3;
     const uintptr_t x10_lsb = x2_lsb + x8_lsb;
     const uintptr_t x10_msb = x2_msb + x8_msb;
-
     n[items] = x10_lsb + c;
-    c = x10_msb + (x10_msb < x2_msb) + (x10_lsb < x2_lsb) + (n[items] < c);
+    const uintptr_t r0 =
+        (x10_msb < x2_msb) + (x10_lsb < x2_lsb) + (n[items] < x10_lsb);
+    c = x10_msb + r0;
+    if (c < x10_msb)
+      panic();
   }
 
   return c ? -1 : 0;
