@@ -185,9 +185,7 @@ inline static int mul10add(uintptr_t *restrict n, const size_t items,
 
 static int stoipv6(uint8_t *restrict ip, const char *restrict s, size_t len) {
   const char *restrict p = s;
-  uintptr_t n[IPV6_BYTES / sizeof(uintptr_t)];
-
-  memset(n, 0, sizeof(n));
+  uintptr_t n[IPV6_BYTES / sizeof(uintptr_t)] = {0};
 
   while (len-- != 0) {
     uintptr_t d = *p++ - '0';
