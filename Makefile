@@ -27,7 +27,6 @@ INCLUDES=-I/usr/include
 DEBUG=
 DEBUG+=-g
 #DEBUG+=-O0
-#DEBUG+=-DDEBUG
 
 CONFIG=
 
@@ -37,7 +36,7 @@ PROFILE=
 LTO=
 LTO+=-flto=auto
 
-STANDARD=-std=c11
+STANDARD=-std=c2x
 
 WARNINGS=-Wall
 WARNINGS+=-Werror
@@ -65,6 +64,7 @@ LDFLAGS=$(DEBUG) $(PROFILE) $(LTO)
 
 HEADERS=csv2etc.h
 HEADERS+=cmd-dbip.h
+HEADERS+=cmd-ip2location.h
 HEADERS+=heap.h
 HEADERS+=host.h
 HEADERS+=map.h
@@ -73,6 +73,7 @@ HEADERS+=string.h
 
 OBJS=csv2etc.o
 OBJS+=cmd-dbip.o
+OBJS+=cmd-ip2location.o
 OBJS+=heap.o
 OBJS+=map.o
 OBJS+=proc.o
@@ -80,6 +81,7 @@ OBJS+=string.o
 
 FORMATSRC=csv2etc.c
 FORMATSRC+=cmd-dbip.c
+FORMATSRC+=cmd-ip2location.c
 FORMATSRC+=heap.c
 FORMATSRC+=map.c
 FORMATSRC+=proc.c

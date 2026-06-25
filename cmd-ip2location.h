@@ -15,48 +15,15 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef CSV2ETC_H
-#define CSV2ETC_H
+#ifndef CMD_IPTOLOCATION_H
+#define CMD_IPTOLOCATION_H
 
 #ifdef HAVE_HOST_H
 #include "host.h"
 #endif
 
-#ifndef CELLVALUE_MAX
-#define CELLVALUE_MAX 512
-#endif
+#include "csv2etc.h"
 
-#include <stdbool.h>
-#include <stddef.h>
-
-struct cell {
-  char *val;
-  size_t len;
-  size_t row;
-  size_t col;
-};
-
-struct csv2etc {
-  const char *in_nm;
-  char separator;
-  bool quiet;
-  size_t row;
-  char *line;
-};
-
-struct cmd {
-  const char *const nm;
-  const struct cmd_ops *const ops;
-};
-
-struct cmd_ops {
-  const char *const nm;
-  const char *const usage;
-  void *(*open)(const struct csv2etc *restrict const, int argc, char *argv[]);
-  int (*close)(const struct csv2etc *restrict const, void *restrict const);
-  int (*read)(const struct csv2etc *restrict const, void *restrict const,
-              const struct cell *restrict const);
-  int (*write)(const struct csv2etc *restrict const, void *restrict const);
-};
+extern const struct cmd cmd_ip2location[];
 
 #endif

@@ -1,8 +1,16 @@
-	Usage: csv2etc command [-q] [-i input-file]
+	Usage: csv2etc command [-q] [-i input-file] [-s separator-char]
 		dbip-asn
-			nftables [-n name] [-o out-dir]
+			nftables [-n name] [-o output-directory]
 		dbip-country
-			nftables [-n name] [-o out-dir]
+			nftables [-n name] [-o output-directory]
+		ip2location-asn-ipv4
+			dbip-asn [-o output-file]
+		ip2location-asn-ipv6
+			dbip-asn [-o output-file]
+		ip2location-ipv4
+			dbip-country [-o output-file]
+		ip2location-ipv6
+			dbip-country [-o output-file]
 
 	0x02$ wget -q https://download.db-ip.com/free/dbip-country-lite-$(date +%Y-%m).csv.gz
 	0x02$ wget -q https://download.db-ip.com/free/dbip-asn-lite-$(date +%Y-%m).csv.gz

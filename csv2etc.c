@@ -20,6 +20,7 @@
 #endif
 
 #include "cmd-dbip.h"
+#include "cmd-ip2location.h"
 #include "csv2etc.h"
 #include "proc.h"
 #include "string.h"
@@ -174,6 +175,7 @@ static _Noreturn void usage(void) {
   werr("Usage: %s command [-q] [-i input-file] [-s separator-char]\n",
        progname);
   cmd_usage(cmd_dbip);
+  cmd_usage(cmd_ip2location);
   exit(EXIT_FAILURE);
 }
 
@@ -196,6 +198,9 @@ static int csv2etc(int argc, char *argv[]) {
     usage();
 
   cmd = cmd_match(cmd_dbip, argv[0]);
+
+  if (cmd == NULL)
+    cmd = cmd_match(cmd_ip2location, argv[0]);
 
   if (cmd == NULL)
     usage();
