@@ -1,5 +1,5 @@
 /* $SchulteIT: heap.c 15189 2025-10-27 05:41:45Z schulte $ */
-/* $JDTAUS: heap.c 9511 2026-06-13 19:28:18Z schulte $ */
+/* $JDTAUS: heap.c 9519 2026-06-14 23:10:28Z schulte $ */
 
 /*
  * Copyright (c) 2018 - 2026 Christian Schulte <cs@schulte.it>
@@ -36,8 +36,7 @@ inline void *heap_malloc(const size_t size) {
   void *restrict const ptr = malloc(size);
   if (ptr == NULL)
     fatal("%s", strerror(errno));
-  // XXX: Remove memset
-  memset(ptr, '\0', size);
+  //  memset(ptr, 0xff, size);
   return ptr;
 }
 

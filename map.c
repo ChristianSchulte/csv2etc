@@ -1,5 +1,5 @@
 /* $SchulteIT: map.c 15189 2025-10-27 05:41:45Z schulte $ */
-/* $JDTAUS: map.c 9522 2026-06-14 23:56:20Z schulte $ */
+/* $JDTAUS: map.c 9571 2026-06-26 02:11:30Z schulte $ */
 
 /*
  * Copyright (c) 2018 - 2026 Christian Schulte <cs@schulte.it>
@@ -64,8 +64,8 @@ inline struct Map *Map_new(const struct MapOps *restrict const ops,
 
 inline void Map_delete(struct Map *restrict const m,
                        void (*v_delete)(void *restrict const)) {
-  for (size_t i = m->capacity; i > 0; i--) {
-    struct Entry *restrict e = m->buckets[i - 1];
+  for (size_t i = m->capacity; i-- > 0;) {
+    struct Entry *restrict e = m->buckets[i];
 
     while (e != NULL) {
       if (v_delete)
