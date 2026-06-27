@@ -169,14 +169,13 @@ static int stoipv4(unsigned long *restrict ip, const char *restrict s) {
 inline static int mul10add(uintptr_t *restrict n, size_t items, uintptr_t c) {
 #define BITS (sizeof(uintptr_t) * 8)
   while (items-- > 0) {
-    const uintptr_t x2_lsb = n[items] << 1;
-    const uintptr_t x8_lsb = n[items] << 3;
+    const uintptr_t x = n[items];
+    const uintptr_t x2_lsb = x << 1;
+    const uintptr_t x8_lsb = x << 3;
     const uintptr_t x10_lsb = x2_lsb + x8_lsb;
-    const uintptr_t x10_msb =
-        (n[items] >> (BITS - 1)) + (n[items] >> (BITS - 3));
     n[items] = x10_lsb + c;
-    const uintptr_t r0 = (x10_lsb < x2_lsb) + (n[items] < x10_lsb);
-    c = x10_msb + r0;
+    c = (x >> (BITS - 1)) + (x >> (BITS - 3)) + (x10_lsb < x2_lsb) +
+        (n[items] < x10_lsb);
   }
 
   return c ? -1 : 0;
