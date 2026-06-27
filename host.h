@@ -1,4 +1,4 @@
-/* $JDTAUS: host.h 9502 2026-06-11 04:46:18Z schulte $ */
+/* $JDTAUS: host.h 9558 2026-06-21 01:56:44Z schulte $ */
 
 /*
  * Copyright (c) 2026 Christian Schulte <cs@schulte.it>
@@ -24,6 +24,7 @@
 #define __attribute__(x)
 #define _Noreturn __declspec(noreturn)
 #define inline
+#define timegm _mkgmtime
 #endif
 
 #endif

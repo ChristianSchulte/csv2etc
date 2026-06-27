@@ -47,7 +47,7 @@
 
 /*
  * $SchulteIT: optparse.h 15210 2025-10-27 10:14:49Z schulte $
- * $JDTAUS: optparse.h 9392 2026-05-24 20:05:18Z schulte $
+ * $JDTAUS: optparse.h 9502 2026-06-11 04:46:18Z schulte $
  * Origin: https://github.com/skeeto/optparse
  *  a86877ed301d89a4eb64feb08f23af395aede2ed
  * Modifications: None.
@@ -56,7 +56,7 @@
 #ifndef OPTPARSE_H
 #define OPTPARSE_H
 
-#ifdef HAVE_ABAG_HOST_H
+#ifdef HAVE_HOST_H
 #include "host.h"
 #endif
 
