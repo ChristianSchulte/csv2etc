@@ -1,5 +1,5 @@
 /* $SchulteIT: heap.c 15189 2025-10-27 05:41:45Z schulte $ */
-/* $JDTAUS: heap.c 9519 2026-06-14 23:10:28Z schulte $ */
+/* $JDTAUS: heap.c 9608 2026-07-01 06:17:27Z schulte $ */
 
 /*
  * Copyright (c) 2018 - 2026 Christian Schulte <cs@schulte.it>
@@ -25,7 +25,6 @@
 #include "proc.h"
 
 #include <errno.h>
-#include <stdlib.h>
 #include <string.h>
 
 #if defined(__linux__)
