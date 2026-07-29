@@ -1,5 +1,5 @@
 /* $SchulteIT: map.h 15189 2025-10-27 05:41:45Z schulte $ */
-/* $JDTAUS: map.h 9517 2026-06-14 22:19:40Z schulte $ */
+/* $JDTAUS: map.h 9643 2026-07-29 08:15:42Z schulte $ */
 
 /*
  * Copyright (c) 2018 - 2026 Christian Schulte <cs@schulte.it>
@@ -24,6 +24,10 @@
 #include "host.h"
 #endif
 
+#ifdef MULTI_THREADED
+#include <threads.h>
+#endif
+
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -43,6 +47,7 @@ void Map_delete(struct Map *restrict const,
                 void (*v_delete)(void *restrict const));
 
 void *Map_put(struct Map *restrict const, void *const, void *const);
+bool Map_exists(const struct Map *restrict const, const void *restrict const);
 void *Map_get(const struct Map *restrict const, const void *restrict const);
 void *Map_remove(struct Map *restrict const, void *const);
 
@@ -56,6 +61,7 @@ const void *const MapIterator_key(const struct MapIterator *restrict const);
 const void *const MapIterator_value(const struct MapIterator *restrict const);
 
 #ifdef MULTI_THREADED
+mtx_t *Map_mutex(struct Map *restrict const);
 void Map_lock(struct Map *restrict const);
 bool Map_trylock(struct Map *restrict const);
 void Map_unlock(struct Map *restrict const);

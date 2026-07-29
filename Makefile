@@ -75,6 +75,7 @@ OBJS=csv2etc.o
 OBJS+=cmd-dbip.o
 OBJS+=cmd-ip2location.o
 OBJS+=heap.o
+OBJS+=heap-reallocarray.o
 OBJS+=map.o
 OBJS+=proc.o
 OBJS+=string.o

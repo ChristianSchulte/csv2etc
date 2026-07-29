@@ -1,5 +1,5 @@
 /* $SchulteIT: heap.h 15189 2025-10-27 05:41:45Z schulte $ */
-/* $JDTAUS: heap.h 9502 2026-06-11 04:46:18Z schulte $ */
+/* $JDTAUS: heap.h 9639 2026-07-22 06:07:19Z schulte $ */
 
 /*
  * Copyright (c) 2018 - 2026 Christian Schulte <cs@schulte.it>
@@ -29,6 +29,7 @@
 void *heap_malloc(const size_t);
 void *heap_calloc(const size_t nmemb, const size_t size);
 void *heap_realloc(void *restrict const, const size_t);
+void *heap_reallocarray(void *restrict const, const size_t, const size_t);
 void heap_free(void *restrict const);
 void heap_trim(const size_t);
 #endif

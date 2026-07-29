@@ -1,5 +1,5 @@
 /* $SchulteIT: proc.h 15260 2025-11-04 03:03:57Z schulte $ */
-/* $JDTAUS: proc.h 9603 2026-06-30 07:34:51Z schulte $ */
+/* $JDTAUS: proc.h 9643 2026-07-29 08:15:42Z schulte $ */
 
 /*
  * Copyright (c) 2018 - 2026 Christian Schulte <cs@schulte.it>
@@ -37,6 +37,7 @@ void wout(const char *, ...) __attribute__((__format__(printf, 1, 2)));
 void werr(const char *, ...) __attribute__((__format__(printf, 1, 2)));
 
 const char *envs(const char *restrict const, const char *restrict const);
+const char *envuri(const char *restrict const, const char *restrict const);
 unsigned long envul(const char *restrict const, const unsigned long);
 
 #ifdef MULTI_THREADED

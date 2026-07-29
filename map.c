@@ -1,5 +1,5 @@
 /* $SchulteIT: map.c 15189 2025-10-27 05:41:45Z schulte $ */
-/* $JDTAUS: map.c 9571 2026-06-26 02:11:30Z schulte $ */
+/* $JDTAUS: map.c 9643 2026-07-29 08:15:42Z schulte $ */
 
 /*
  * Copyright (c) 2018 - 2026 Christian Schulte <cs@schulte.it>
@@ -54,8 +54,8 @@ inline struct Map *Map_new(const struct MapOps *restrict const ops,
                            const size_t capacity) {
   struct Map *restrict const m = heap_malloc(sizeof(struct Map));
   m->ops = ops;
-  m->capacity = capacity;
-  m->buckets = heap_calloc(capacity, sizeof(struct Entry *));
+  m->capacity = ((capacity | !capacity) + 1) & ~1U;
+  m->buckets = heap_calloc(m->capacity, sizeof(struct Entry *));
 #ifdef MULTI_THREADED
   mutex_init(&m->mtx);
 #endif
@@ -111,6 +111,16 @@ inline void *Map_put(struct Map *restrict const m, void *const k,
   }
 
   return value;
+}
+
+inline bool Map_exists(const struct Map *restrict const m,
+                       const void *restrict const k) {
+  struct Entry *restrict e = m->buckets[m->ops->k_hash(k) % m->capacity];
+
+  while (e != NULL && !m->ops->k_equals(e->key, k))
+    e = e->next;
+
+  return e != NULL;
 }
 
 inline void *Map_get(const struct Map *restrict const m,
@@ -207,6 +217,7 @@ MapIterator_value(const struct MapIterator *restrict const it) {
 }
 
 #ifdef MULTI_THREADED
+inline mtx_t *Map_mutex(struct Map *restrict const m) { return &m->mtx; }
 inline void Map_lock(struct Map *restrict const m) { mutex_lock(&m->mtx); }
 inline bool Map_trylock(struct Map *restrict const m) {
   return mutex_trylock(&m->mtx);

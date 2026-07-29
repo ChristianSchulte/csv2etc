@@ -1,5 +1,5 @@
 /* $SchulteIT: proc.c 15189 2025-10-27 05:41:45Z schulte $ */
-/* $JDTAUS: proc.c 9608 2026-07-01 06:17:27Z schulte $ */
+/* $JDTAUS: proc.c 9643 2026-07-29 08:15:42Z schulte $ */
 
 /*
  * Copyright (c) 2018 - 2026 Christian Schulte <cs@schulte.it>
@@ -97,6 +97,23 @@ inline unsigned long envul(const char *restrict const nm,
     fatal("%s: %s < 0", nm, env);
 
   return v;
+}
+
+#define allowed_in_uri(c)                                                      \
+  ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||                         \
+   (c >= '0' && c <= '9') || c == ':' || c == '/' || c == '?' || c == '#' ||   \
+   c == '[' || c == ']' || c == '@' || c == '!' || c == '$' || c == '&' ||     \
+   c == '\'' || c == '(' || c == ')' || c == '*' || c == '+' || c == ',' ||    \
+   c == ';' || c == '=' || c == '-' || c == '.' || c == '_' || c == '~')
+
+inline const char *envuri(const char *restrict nm, const char *restrict dflt) {
+  const char *restrict env = envs(nm, dflt);
+
+  for (const char *restrict p = env; *p; p++)
+    if (!allowed_in_uri(*p))
+      fatal("%s: %s", nm, env);
+
+  return env;
 }
 
 #ifdef MULTI_THREADED
