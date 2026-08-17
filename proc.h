@@ -1,5 +1,5 @@
 /* $SchulteIT: proc.h 15260 2025-11-04 03:03:57Z schulte $ */
-/* $JDTAUS: proc.h 9643 2026-07-29 08:15:42Z schulte $ */
+/* $JDTAUS: proc.h 9674 2026-08-07 17:02:19Z schulte $ */
 
 /*
  * Copyright (c) 2018 - 2026 Christian Schulte <cs@schulte.it>
@@ -30,8 +30,7 @@
   (werr("%s: Abort: %s: %d\n", __func__, __FILE__, __LINE__), abort())
 
 #define fatal(_fmt, ...)                                                       \
-  (werr("%s: Failure: ", __func__), werr((_fmt), __VA_ARGS__), werr("\n"),     \
-   exit(EXIT_FAILURE))
+  (werr("%s: Failure: " _fmt "\n", __func__, __VA_ARGS__), exit(EXIT_FAILURE))
 
 void wout(const char *, ...) __attribute__((__format__(printf, 1, 2)));
 void werr(const char *, ...) __attribute__((__format__(printf, 1, 2)));
