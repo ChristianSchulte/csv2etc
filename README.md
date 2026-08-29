@@ -61,8 +61,8 @@
 			type ipv4_addr
 			flags dynamic, timeout
 			size 524288
-			# 12 burst / 12 rate = 1 plus 30s headroom
-			timeout 1m30s
+			# 24 burst / 6 rate = 4s no headroom
+			timeout 4s
 		}
 		set mta_blocklist {
 			type ipv4_addr
@@ -109,10 +109,27 @@
 		include "/etc/nftables/dbip-asn-ipv6.nft"
 		include "/etc/nftables/dbip-country-ipv4.nft"
 		include "/etc/nftables/dbip-country-ipv6.nft"
+		set asn_whitelist {
+			type mark
+			elements = {
+				# Deutsche Telekom AG
+				$AS3320,
+				# VERSATEL - 1&1 Versatel GmbH, DE
+				$AS8881,
+				# Contabo GmbH
+				$AS51167,
+			}
+		}
 		set country_whitelist {
 			type mark
 			elements = {
-				$DE
+				$DE,
+			}
+		}
+		set ipv4_whitelist {
+			type ipv4_addr
+			elements = {
+				157.173.116.104,
 			}
 		}
 		counter accepted_connections {}
@@ -141,22 +158,25 @@
 			#           tracking
 			ct state established,related counter name "accepted_connections" accept
 			ct state invalid counter name "dropped_connections" drop
-			# Reject blacklisted ASN
+			# Accept IPs on the ipv4_whitelist
+			ip saddr @ipv4_whitelist accept
+			# Reject ASN having exceeded rate limiting
 			ct state new ct mark set ip saddr map @dbip-ipv4-asn
 			ct state new ct mark set ip6 saddr map @dbip-ipv6-asn
 			ct mark @asn_blocklist update @asn_blocklist {\
 				ct mark\
 			} counter name "rejected_asn" reject
-			# Reject ASN exceeding rate limiting
-			ct state new update @asn_limits {\
+			# Reject ASN not on the ASN whitelist exceeding rate limiting
+			ct state new ct mark != @asn_whitelist update @asn_limits {\
 				ct mark limit rate over 4/minute burst 36 packets\
 			} update @asn_blocklist {\
 				ct mark\
 			} counter name "rejected_asn" reject
 			# Reject web clients having exceeded rate limiting
-			tcp dport { 80, 443 } ip saddr @http_blocklist update @http_blocklist {\
-				ip saddr\
-			} counter name "rejected_webclients" reject
+			tcp dport { 80, 443 } ip saddr @http_blocklist\
+				update @http_blocklist {\
+					ip saddr\
+				} counter name "rejected_webclients" reject
 			# Reject mail transfer agents having exceeded rate limiting
 			tcp dport { 25 } ip saddr @mta_blocklist update @mta_blocklist {\
 				ip saddr\
@@ -176,10 +196,10 @@
 				ct state new update @http_limits_hard {\
 					ip saddr limit rate 2/minute burst 10 packets\
 				} counter name "accepted_webclients" accept
-			# Accept web clients in the country whitelist applying soft rate limiting
+			# Accept web clients on the country whitelist applying soft rate limiting
 			meta mark @country_whitelist tcp dport { 80, 443 }\
 				ct state new update @http_limits_soft {\
-					ip saddr limit rate 12/minute burst 12 packets\
+					ip saddr limit rate 6/second burst 24 packets\
 				} counter name "accepted_webclients" accept
 			# Reject web clients exceeding rate limiting
 			tcp dport { 80, 443 } ct state new update @http_blocklist {\
@@ -193,26 +213,28 @@
 			tcp dport { 25 } ct state new update @mta_blocklist {\
 				ip saddr\
 			} counter name "rejected_smtpclients" reject
-			# Reject ssh clients not from germany
+			# Reject ssh clients not on the country whitelist
 			meta mark != @country_whitelist tcp dport { 22 } update @ssh_blocklist {\
 				ip saddr\
 			} counter name "rejected_sshclients" reject
-			# Accept ssh clients applying rate limiting
-			tcp dport { 22 } ct state new update @ssh_limits {\
-				ip saddr limit rate 1/minute burst 2 packets\
-			} counter name "accepted_sshclients" accept
+			# Accept ssh clients on the country whitelist applying rate limiting
+			meta mark @country_whitelist tcp dport { 22 }\
+				ct state new update @ssh_limits {\
+					ip saddr limit rate 1/minute burst 2 packets\
+				} counter name "accepted_sshclients" accept
 			# Reject ssh clients exceeding rate limiting
 			tcp dport { 22 } ct state new update @ssh_blocklist {\
 				ip saddr\
 			} counter name "rejected_sshclients" reject
-			# Reject mail clients not from germany
+			# Reject mail user agents not on the country whitelist
 			meta mark != @country_whitelist tcp dport { 465, 993 } update @mua_blocklist {\
 				ip saddr\
 			} counter name "rejected_mailclients" reject
-			# Accept mail user agents applying rate limiting
-			tcp dport { 465, 993 } ct state new update @mua_limits {\
-				ip saddr limit rate 1/minute burst 10 packets\
-			} counter name "accepted_mailclients" accept
+			# Accept mail user agents on the country whitelist applying rate limiting
+			meta mark @country_whitelist tcp dport { 465, 993 }\
+				ct state new update @mua_limits {\
+					ip saddr limit rate 1/minute burst 10 packets\
+				} counter name "accepted_mailclients" accept
 			# Reject mail user agents exceeding rate limiting
 			tcp dport { 465, 993 } ct state new update @mua_blocklist {\
 				ip saddr\
@@ -240,4 +262,3 @@
 	0x02$ nft list set inet filter mua_limits
 	0x02$ whois -h whois.cymru.com -v 2.58.100.1
 	0x02$ lynx https//bgp.tools/as/3320
-
