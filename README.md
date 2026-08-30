@@ -261,4 +261,4 @@
 	0x02$ nft list set inet filter mta_limits
 	0x02$ nft list set inet filter mua_limits
 	0x02$ whois -h whois.cymru.com -v 2.58.100.1
-	0x02$ lynx https//bgp.tools/as/3320
+	0x02$ lynx https://bgp.tools/as/3320
