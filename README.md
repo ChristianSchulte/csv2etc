@@ -262,3 +262,22 @@
 	0x02$ nft list set inet filter mua_limits
 	0x02$ whois -h whois.cymru.com -v 2.58.100.1
 	0x02$ lynx https://bgp.tools/as/3320
+	0x02$ nft list set inet filter asn_blocklist
+	table inet filter {
+		set asn_blocklist {
+			type mark
+			size 524288
+			flags dynamic,timeout
+			timeout 10m
+			elements = { 0x00001f8b expires 7m20s808ms,
+				0x000080a6 expires 9m54s712ms,
+				0x0000db59 expires 8m29s888ms,
+				0x000331b6 expires 9m59s480ms,
+				0x00060eb6 expires 9m18s }
+		}
+	}
+	0x02$ lynx https://bgp.tools/as/$((0x00001f8b))
+	0x02$ lynx https://bgp.tools/as/$((0x000080a6))
+	0x02$ lynx https://bgp.tools/as/$((0x0000db59))
+	0x02$ lyny https://bgp.tools/as/$((0x000331b6))
+	0x02$ lynx https://bgp.tools/as/$((0x00060eb6))
