@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <string.h>
 
-const char *restrict progname;
+struct String *restrict progname;
 _Atomic bool terminated;
 
 static size_t scan_quoted(char *restrict out, size_t *out_len,
@@ -173,7 +173,7 @@ static void cmd_usage(const struct cmd *restrict cmd) {
 
 static _Noreturn void usage(void) {
   werr("Usage: %s command [-q] [-i input-file] [-s separator-char]\n",
-       progname);
+       String_chars(progname));
   cmd_usage(cmd_dbip);
   cmd_usage(cmd_ip2location);
   exit(EXIT_FAILURE);
@@ -290,18 +290,25 @@ int main(int argc, char *argv[]) {
     fatal("%s", strerror(errno));
 
   if (argv[0] != NULL) {
-    char *p_nm = strrchr(argv[0], '/');
+    char *restrict p_nm = strrchr(argv[0], '/');
 
     if (p_nm == NULL)
       p_nm = strrchr(argv[0], '\\');
 
     char *restrict p_dot = strrchr(argv[0], '.');
-    if (p_dot != NULL)
-      *p_dot = '\0';
 
-    progname = p_nm != NULL ? p_nm + 1 : argv[0];
+    if (p_dot != NULL && strcmp(p_dot, ".exe") != 0)
+      p_dot = NULL;
+
+    if (p_dot != NULL)
+      progname =
+          String_cnnew(p_nm != NULL ? p_nm + 1 : argv[0],
+                       p_nm != NULL ? p_dot - p_nm + 1 : p_dot - argv[0]);
+    else
+      progname = String_cnew(p_nm != NULL ? p_nm + 1 : argv[0]);
+
   } else
-    progname = ".";
+    progname = String_cnew(".");
 
   return csv2etc(argc - 1, argv + 1);
 }

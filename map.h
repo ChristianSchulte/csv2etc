@@ -1,5 +1,5 @@
 /* $SchulteIT: map.h 15189 2025-10-27 05:41:45Z schulte $ */
-/* $JDTAUS: map.h 9643 2026-07-29 08:15:42Z schulte $ */
+/* $JDTAUS: map.h 9738 2026-09-21 06:07:28Z schulte $ */
 
 /*
  * Copyright (c) 2018 - 2026 Christian Schulte <cs@schulte.it>
@@ -58,7 +58,7 @@ bool MapIterator_next(struct MapIterator *restrict const);
 void *MapIterator_remove(struct MapIterator *restrict const);
 
 const void *const MapIterator_key(const struct MapIterator *restrict const);
-const void *const MapIterator_value(const struct MapIterator *restrict const);
+void *const MapIterator_value(const struct MapIterator *restrict const);
 
 #ifdef MULTI_THREADED
 mtx_t *Map_mutex(struct Map *restrict const);
