@@ -1,5 +1,5 @@
 /* $SchulteIT: map.h 15189 2025-10-27 05:41:45Z schulte $ */
-/* $JDTAUS: map.h 9738 2026-09-21 06:07:28Z schulte $ */
+/* $JDTAUS: map.h 9761 2026-09-26 07:49:34Z schulte $ */
 
 /*
  * Copyright (c) 2018 - 2026 Christian Schulte <cs@schulte.it>
@@ -40,6 +40,8 @@ struct MapOps {
   size_t (*k_hash)(const void *restrict const);
   bool (*k_equals)(const void *restrict const, const void *restrict const);
 };
+
+extern const struct MapOps *const IdentityMapOps;
 
 struct Map *Map_new(const struct MapOps *restrict const, const size_t);
 

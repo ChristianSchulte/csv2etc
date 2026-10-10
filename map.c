@@ -1,5 +1,5 @@
 /* $SchulteIT: map.c 15189 2025-10-27 05:41:45Z schulte $ */
-/* $JDTAUS: map.c 9738 2026-09-21 06:07:28Z schulte $ */
+/* $JDTAUS: map.c 9815 2026-10-10 03:11:03Z schulte $ */
 
 /*
  * Copyright (c) 2018 - 2026 Christian Schulte <cs@schulte.it>
@@ -28,6 +28,8 @@
 #include "heap.h"
 #include "map.h"
 
+#include <stdint.h>
+
 struct Entry {
   void *restrict key;
   void *restrict value;
@@ -50,9 +52,26 @@ struct MapIterator {
   const struct Map *restrict m;
 };
 
+inline static void *id_copy(void *restrict const k) { return k; }
+inline static void id_delete(void *restrict const k) { (void)k; }
+inline static size_t id_hash(const void *restrict const k) {
+  return (size_t)(uintptr_t)k;
+}
+inline static bool id_equals(const void *restrict const k1,
+                             const void *restrict const k2) {
+  return k1 == k2;
+}
+
+const struct MapOps *const IdentityMapOps = &(const struct MapOps){
+    .k_copy = id_copy,
+    .k_delete = id_delete,
+    .k_hash = id_hash,
+    .k_equals = id_equals,
+};
+
 inline struct Map *Map_new(const struct MapOps *restrict const ops,
                            const size_t capacity) {
-  struct Map *restrict const m = heap_malloc(sizeof(struct Map));
+  struct Map *restrict const m = heap_calloc(1, sizeof(struct Map));
   m->ops = ops;
   m->capacity = ((capacity | !capacity) + 1) & ~1U;
   m->buckets = heap_calloc(m->capacity, sizeof(struct Entry *));

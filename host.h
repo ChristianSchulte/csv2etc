@@ -1,4 +1,4 @@
-/* $JDTAUS: host.h 9558 2026-06-21 01:56:44Z schulte $ */
+/* $JDTAUS: host.h 9817 2026-10-10 21:50:27Z schulte $ */
 
 /*
  * Copyright (c) 2026 Christian Schulte <cs@schulte.it>
@@ -20,7 +20,6 @@
 #define HOST_H
 
 #if defined(_MSC_VER) && !defined(__clang__)
-#define _Atomic
 #define __attribute__(x)
 #define _Noreturn __declspec(noreturn)
 #define inline

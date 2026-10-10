@@ -303,7 +303,7 @@ int main(int argc, char *argv[]) {
     if (p_dot != NULL)
       progname =
           String_cnnew(p_nm != NULL ? p_nm + 1 : argv[0],
-                       p_nm != NULL ? p_dot - p_nm + 1 : p_dot - argv[0]);
+                       p_nm != NULL ? p_dot - (p_nm + 1) : p_dot - argv[0]);
     else
       progname = String_cnew(p_nm != NULL ? p_nm + 1 : argv[0]);
 

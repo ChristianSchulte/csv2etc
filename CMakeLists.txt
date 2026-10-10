@@ -48,6 +48,7 @@ if(MSVC)
 	set(CMAKE_C_STANDARD	11)
 	set(CMAKE_C_STANDARD_REQUIRED	ON)
 	set(CMAKE_C_EXTENSIONS	OFF)
+	add_compile_options(/experimental:c11atomics)
 	add_compile_definitions(HAVE_HOST_H)
 endif()
 
