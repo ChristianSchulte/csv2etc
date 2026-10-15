@@ -1,5 +1,5 @@
 /* $SchulteIT: string.c 15189 2025-10-27 05:41:45Z schulte $ */
-/* $JDTAUS: string.c 9815 2026-10-10 03:11:03Z schulte $ */
+/* $JDTAUS: string.c 9834 2026-10-15 03:50:44Z schulte $ */
 
 /*
  * Copyright (c) 2018 - 2026 Christian Schulte <cs@schulte.it>
@@ -53,9 +53,17 @@ const void *const StringMapOps = &(const struct MapOps){
 
 #ifdef STRING_INTERNING
 struct Map *restrict strings;
+_Atomic bool strings_destroy;
 
-void string_init(void) { strings = Map_new(StringMapOps, 524288); }
-void string_destroy(void) { Map_delete(strings, String_delete); }
+void string_init(void) {
+  strings_destroy = false;
+  strings = Map_new(StringMapOps, 524288);
+}
+
+void string_destroy(void) {
+  strings_destroy = true;
+  Map_delete(strings, String_delete);
+}
 #endif
 
 inline struct String *String_cnew(const char *restrict s) {
@@ -196,6 +204,17 @@ inline void String_delete(void *restrict const s) {
 #endif
   if (str->r_cnt-- == 0)
     panic();
+
+#ifdef STRING_INTERNING
+#ifdef MULTI_THREADED
+  Map_lock(strings);
+#endif
+  if (str->r_cnt < 2 && !strings_destroy && Map_exists(strings, str))
+    panic();
+#ifdef MULTI_THREADED
+  Map_unlock(strings);
+#endif
+#endif
 
   if (str->r_cnt > 0) {
 #ifdef MULTI_THREADED
