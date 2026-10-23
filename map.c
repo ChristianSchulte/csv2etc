@@ -1,5 +1,5 @@
 /* $SchulteIT: map.c 15189 2025-10-27 05:41:45Z schulte $ */
-/* $JDTAUS: map.c 9815 2026-10-10 03:11:03Z schulte $ */
+/* $JDTAUS: map.c 9861 2026-10-21 03:18:15Z schulte $ */
 
 /*
  * Copyright (c) 2018 - 2026 Christian Schulte <cs@schulte.it>
@@ -27,6 +27,7 @@
 
 #include "heap.h"
 #include "map.h"
+#include "proc.h"
 
 #include <stdint.h>
 
@@ -44,19 +45,24 @@ struct Map {
   mtx_t mtx;
 #endif
   size_t capacity;
+  size_t size;
 };
 
 struct MapIterator {
-  size_t i;
+  struct Map *restrict m;
   struct Entry *restrict e;
-  const struct Map *restrict m;
+  size_t i;
 };
+
+size_t Map_emax(struct Map *restrict const, const size_t);
 
 inline static void *id_copy(void *restrict const k) { return k; }
 inline static void id_delete(void *restrict const k) { (void)k; }
+
 inline static size_t id_hash(const void *restrict const k) {
   return (size_t)(uintptr_t)k;
 }
+
 inline static bool id_equals(const void *restrict const k1,
                              const void *restrict const k2) {
   return k1 == k2;
@@ -127,6 +133,9 @@ inline void *Map_put(struct Map *restrict const m, void *const k,
       m->buckets[i]->prev = e;
 
     m->buckets[i] = e;
+
+    if (m->size++ == SIZE_MAX)
+      panic();
   }
 
   return value;
@@ -152,6 +161,8 @@ inline void *Map_get(const struct Map *restrict const m,
   return e != NULL ? e->value : NULL;
 }
 
+inline size_t Map_size(const struct Map *restrict const m) { return m->size; }
+
 inline void *Map_remove(struct Map *restrict const m, void *const k) {
   const size_t i = m->ops->k_hash(k) % m->capacity;
   struct Entry *restrict e = m->buckets[i];
@@ -173,12 +184,74 @@ inline void *Map_remove(struct Map *restrict const m, void *const k) {
       e->next->prev = e->prev;
 
     heap_free(e);
+
+    if (m->size-- == 0)
+      panic();
   }
 
   return value;
 }
 
-inline struct MapIterator *MapIterator_new(const struct Map *restrict const m) {
+inline size_t Map_emax(struct Map *restrict const m, const size_t capacity) {
+  size_t e_max = 0;
+  size_t *restrict const entries = heap_calloc(capacity, sizeof(size_t));
+
+  for (size_t i = 0; i < m->capacity; i++)
+    for (struct Entry *restrict e = m->buckets[i]; e != NULL; e = e->next) {
+      const size_t j = m->ops->k_hash(e->key) % capacity;
+
+      if (++entries[j] > e_max)
+        e_max = entries[j];
+    }
+
+  heap_free(entries);
+  return e_max;
+}
+
+inline void Map_optimize(struct Map *restrict const m) {
+  size_t capacity = ((m->size | !m->size) + 1) & ~1U;
+  const size_t limit =
+      capacity < (SIZE_MAX >> 3UL) ? capacity << 3UL : (SIZE_MAX >> 1UL);
+
+  size_t max = Map_emax(m, capacity);
+
+  for (size_t c = capacity; c < limit && max > 1; c <<= 1UL) {
+    const size_t c_max = Map_emax(m, c);
+
+    if (c_max < max) {
+      max = c_max;
+      capacity = c;
+    }
+  }
+
+  if (capacity != m->capacity) {
+    struct Entry **restrict const buckets =
+        heap_calloc(capacity, sizeof(struct Entry *));
+
+    for (size_t i = 0; i < m->capacity; i++) {
+      struct Entry *restrict e = m->buckets[i];
+
+      while (e != NULL) {
+        struct Entry *restrict const next = e->next;
+        const size_t j = m->ops->k_hash(e->key) % capacity;
+
+        e->prev = NULL;
+
+        if ((e->next = buckets[j]) != NULL)
+          buckets[j]->prev = e;
+
+        buckets[j] = e;
+        e = next;
+      }
+    }
+
+    heap_free(m->buckets);
+    m->buckets = buckets;
+    m->capacity = capacity;
+  }
+}
+
+inline struct MapIterator *MapIterator_new(struct Map *restrict const m) {
   struct MapIterator *restrict const it =
       heap_malloc(sizeof(struct MapIterator));
 
@@ -218,6 +291,10 @@ inline void *MapIterator_remove(struct MapIterator *restrict const it) {
 
     it->m->ops->k_delete(it->e->key);
     heap_free(it->e);
+
+    if (it->m->size-- == 0)
+      panic();
+
     it->e = NULL;
     it->i++;
   }

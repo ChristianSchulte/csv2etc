@@ -54,8 +54,8 @@
 			type ipv4_addr
 			flags dynamic, timeout
 			size 524288
-			# 10 burst / 2 rate = 5 plus 30s headroom
-			timeout 5m30s
+			# 16 burst / 2 rate = 8 plus 30s headroom
+			timeout 8m30s
 		}
 		set http_limits_soft {
 			type ipv4_addr
@@ -103,6 +103,19 @@
 			# 10 burst / 1 rate = 10 plus 30s headroom
 			timeout 10m30s
 		}
+		set dns_blocklist {
+			type ipv4_addr
+			flags dynamic, timeout
+			size 524288
+			timeout 10m
+		}
+		set dns_limits {
+			type ipv4_addr
+			flags dynamic, timeout
+			size 524288
+			# 10 burst / 1 rate = 10 plus 30s headroom
+			timeout 10m30s
+		}
 		include "/etc/nftables/dbip-asn-def.nft"
 		include "/etc/nftables/dbip-country-def.nft"
 		include "/etc/nftables/dbip-asn-ipv4.nft"
@@ -143,6 +156,8 @@
 		counter rejected_sshclients {}
 		counter accepted_mailclients {}
 		counter rejected_mailclients {}
+		counter accepted_dnsclients {}
+		counter rejected_dnsclients {}
 		chain input {
 			type filter hook input priority filter; policy drop;
 			# Accept loopback
@@ -150,6 +165,10 @@
 			# Accept ICMP
 			ip protocol icmp accept
 			ip6 nexthdr icmpv6 accept
+			# Accept WireGuard handshakes from any source
+			udp dport 51820 accept
+			# Accept everything already inside the WireGuard tunnel
+			iifname "wg0" accept
 			# Track connection states
 			#  established: Packets that belong to an already established
 			#               connection
@@ -176,7 +195,7 @@
 			tcp dport { 80, 443 } ip saddr @http_blocklist\
 				update @http_blocklist {\
 					ip saddr\
-				} counter name "rejected_webclients" reject
+			} counter name "rejected_webclients" reject
 			# Reject mail transfer agents having exceeded rate limiting
 			tcp dport { 25 } ip saddr @mta_blocklist update @mta_blocklist {\
 				ip saddr\
@@ -194,7 +213,7 @@
 			meta mark set ip6 saddr map @dbip-ipv6-country
 			meta mark != @country_whitelist tcp dport { 80, 443 }\
 				ct state new update @http_limits_hard {\
-					ip saddr limit rate 2/minute burst 10 packets\
+					ip saddr limit rate 2/minute burst 16 packets\
 				} counter name "accepted_webclients" accept
 			# Accept web clients on the country whitelist applying soft rate limiting
 			meta mark @country_whitelist tcp dport { 80, 443 }\
@@ -239,9 +258,25 @@
 			tcp dport { 465, 993 } ct state new update @mua_blocklist {\
 				ip saddr\
 			} counter name "rejected_mailclients" reject
+			# Reject dns clients not on the country whitelist
+			meta mark != @country_whitelist meta l4proto { tcp, udp } th dport { 53 }\
+				update @dns_blocklist {\
+					ip saddr\
+				} counter name "rejected_dnsclients" reject
+			# Accept dns clients on the country whitelist applying rate limiting
+			meta mark @country_whitelist meta l4proto { tcp, udp } th dport { 53 }\
+				ct state new update @dns_limits {\
+					ip saddr limit rate 1/minute burst 10 packets\
+				} counter name "accepted_dnsclients" accept
+			# Reject dns clients exceeding rate limiting
+			meta l4proto { tcp, udp } th dport { 53 } ct state new\
+				update @dns_blocklist {\
+					ip saddr\
+				} counter name "rejected_dnsclients" reject
 		}
 		chain forward {
 			type filter hook forward priority filter;
+			iifname "wg0" oifname "wg0" accept
 		}
 		chain output {
 			type filter hook output priority filter;

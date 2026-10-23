@@ -1,5 +1,5 @@
 /* $SchulteIT: map.h 15189 2025-10-27 05:41:45Z schulte $ */
-/* $JDTAUS: map.h 9761 2026-09-26 07:49:34Z schulte $ */
+/* $JDTAUS: map.h 9861 2026-10-21 03:18:15Z schulte $ */
 
 /*
  * Copyright (c) 2018 - 2026 Christian Schulte <cs@schulte.it>
@@ -44,16 +44,17 @@ struct MapOps {
 extern const struct MapOps *const IdentityMapOps;
 
 struct Map *Map_new(const struct MapOps *restrict const, const size_t);
-
 void Map_delete(struct Map *restrict const,
                 void (*v_delete)(void *restrict const));
 
 void *Map_put(struct Map *restrict const, void *const, void *const);
 bool Map_exists(const struct Map *restrict const, const void *restrict const);
 void *Map_get(const struct Map *restrict const, const void *restrict const);
+size_t Map_size(const struct Map *restrict const);
 void *Map_remove(struct Map *restrict const, void *const);
+void Map_optimize(struct Map *restrict const);
 
-struct MapIterator *MapIterator_new(const struct Map *restrict const);
+struct MapIterator *MapIterator_new(struct Map *restrict const);
 void MapIterator_delete(struct MapIterator *restrict const);
 
 bool MapIterator_next(struct MapIterator *restrict const);

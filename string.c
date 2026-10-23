@@ -1,5 +1,5 @@
 /* $SchulteIT: string.c 15189 2025-10-27 05:41:45Z schulte $ */
-/* $JDTAUS: string.c 9834 2026-10-15 03:50:44Z schulte $ */
+/* $JDTAUS: string.c 9852 2026-10-20 02:27:17Z schulte $ */
 
 /*
  * Copyright (c) 2018 - 2026 Christian Schulte <cs@schulte.it>
@@ -57,7 +57,7 @@ _Atomic bool strings_destroy;
 
 void string_init(void) {
   strings_destroy = false;
-  strings = Map_new(StringMapOps, 524288);
+  strings = Map_new(StringMapOps, 0);
 }
 
 void string_destroy(void) {
@@ -99,6 +99,7 @@ inline struct String *String_cnew(const char *restrict s) {
 #endif
 #ifdef STRING_INTERNING
     Map_put(strings, str, str);
+    Map_optimize(strings);
   }
 #ifdef MULTI_THREADED
   Map_unlock(strings);
@@ -143,6 +144,7 @@ inline struct String *String_cnnew(const char *restrict s, size_t maxlen) {
 #endif
 #ifdef STRING_INTERNING
     Map_put(strings, str, str);
+    Map_optimize(strings);
   }
 #ifdef MULTI_THREADED
   Map_unlock(strings);
